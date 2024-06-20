@@ -1,0 +1,10 @@
+*.mp4
+*.mkv
+*.zip
+output/
+output1/
+output_one_piece/
+output_one_piece1/
+raw/
+__pycache__/
+test.py
