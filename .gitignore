@@ -1,6 +1,7 @@
 *.mp4
 *.mkv
 *.zip
+.DS_store
 output/
 output1/
 output_one_piece/
