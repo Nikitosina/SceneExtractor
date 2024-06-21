@@ -26,8 +26,11 @@ def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white
             os.mkdir(folder_path)
         video_clip.write_videofile(output_filename, codec='libx264')
 
-        # caption = caption_video_VILA(output_filename)
-        result_data.append([video_id, duration_to_iso(int(video_clip.duration)), page_dir])
+        cwd = os.getcwd()
+        os.chdir("../VILA")
+        caption = caption_video_VILA("../SceneExtractor/" + output_filename)
+        os.chdir(cwd)
+        result_data.append([video_id, duration_to_iso(int(video_clip.duration)), page_dir, caption])
         
         print(f"Segment {i+1} saved as {output_filename}")
 
@@ -52,11 +55,12 @@ def caption_video_VILA(video_path: str):
     model_path = "VILA1.5-3b"
     query = "Give a concise caption"
 
-    command = f"""python -W ignore {eval_script_path} --model-path {model_path} --conv-mode vicuna_v1 --query {query} --video-file {video_path}"""
+    command = f"""python -W ignore {eval_script_path} --model-path {model_path} --conv-mode vicuna_v1 --query "<video>{query}" --video-file {video_path}"""
     try:
         out = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True).decode()
+        print(out.split("\n")[-2])
         # Do something with out to get caption
-        return out
+        return out.split("\n")[-2]
     except subprocess.CalledProcessError as e:
         print(e.output.decode("utf-8"))
         exit(1)

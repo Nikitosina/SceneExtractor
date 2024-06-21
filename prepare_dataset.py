@@ -3,7 +3,7 @@ from split_video import *
 import csv
 
 result_data = [["videoid", "duration", "page_dir", "name"]]
-n = 2 # 206
+n = 1 # 206
 foldername = "raw"
 format = "mkv"
 output_csv = "dataset.csv"
@@ -12,7 +12,8 @@ if os.path.exists(output_csv):
     os.remove(output_csv)
 
 for i in range(n):
-    filename = f"[Beatrice-Raws] One Piece {(i + 1):03} [DVDRip 768x576 x264 AC3].{format}"
+    # filename = f"[Beatrice-Raws] One Piece {(i + 1):03} [DVDRip 768x576 x264 AC3].{format}"
+    filename = f"one_piece_00{i + 1}.mkv"
     # filename = f"one_piece_00{i + 1}_trimmed.mp4"
     video_path = foldername + "/" + filename
     timecodes = extract_timecodes(video_path) #, scene_limit=5)
