@@ -5,17 +5,22 @@ result_data = [["videoid", "duration", "page_dir", "name"]]
 n = 5 # 206
 foldername = "raw"
 format = "mkv"
-# output_csv = "dataset.csv"
 
-# if os.path.exists(output_csv):
-#     os.remove(output_csv)
+if not os.path.exists("raw"):
+    print("create folder \"raw\" and put input videos there")
+    exit(1)
 
-for i in range(2, n):
+if not os.path.exists("output"):
+    os.mkdir("output")
+
+if not os.path.exists("csv_no_caption"):
+    os.mkdir("csv_no_caption")
+
+for i in range(0, n):
     filename = f"[Beatrice-Raws] One Piece {(i + 1):03} [DVDRip 768x576 x264 AC3].{format}"
-    # filename = f"one_piece_00{i + 1}.mkv"
     # filename = f"one_piece_00{i + 1}_trimmed.mp4"
     video_path = foldername + "/" + filename
-    timecodes = extract_timecodes(video_path) #, scene_limit=5)
+    timecodes = extract_timecodes(video_path, skip_intro=True) #, scene_limit=5)
     result_list = caption_and_save_clips(video_path, timecodes=timecodes, output_folder="output")
     result_data.extend(result_list)
 
@@ -24,4 +29,4 @@ for i in range(2, n):
         csvWriter = csv.writer(out, delimiter=',')
         csvWriter.writerows(result_data)
 
-    result_data = []
+    result_data = [["videoid", "duration", "page_dir", "name"]]

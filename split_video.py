@@ -7,8 +7,6 @@ from random import randint
 import os
 import subprocess
 
-random.seed(123)
-
 def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white: bool = False) -> list:
     """ Returns array [["videoid", "duration", "page_dir", "name"]] """
     result_data = []
@@ -38,8 +36,12 @@ def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white
     return result_data
 
 
-def extract_timecodes(video_path: str, scene_limit: int = None) -> list[tuple[str, str]]:
-    scene_list = scenedetect.detect(video_path, scenedetect.ContentDetector(threshold=32, min_scene_len=30))
+def extract_timecodes(video_path: str, scene_limit: int = None, skip_intro: bool = True) -> list[tuple[str, str]]:
+    scene_list = scenedetect.detect(
+        video_path,
+        scenedetect.ContentDetector(threshold=32, min_scene_len=30),
+        start_time="00:01:51" if skip_intro else "00:00:00"
+    )
 
     small_batch = scene_list
     if scene_limit:
@@ -70,30 +72,3 @@ def duration_to_iso(seconds):
     minutes = (seconds % 3600) // 60
     seconds = seconds % 60
     return f"PT{hours:02d}H{minutes:02d}M{seconds:02d}S"
-
-# python -W ignore llava/eval/run_vila.py \
-#     --model-path Efficient-Large-Model/VILA1.5-3b \
-#     --conv-mode vicuna_v1 \
-#     --query "<video>\n Please describe this video." \
-#     --video-file "demo.mp4"
-
-# video = VideoFileClip(video_path)
-# print(video.reader.nframes)
-# for frame in video.iter_frames():
-#     plt.imshow(frame, interpolation ='nearest') 
-#     plt.show()
-
-# for item in small_batch:
-#     frame = video.frame get_frame(item[0].frame_num)
-    # print(item[0].frame_num)
-    # plt.imshow(frame, interpolation ='nearest') 
-    # plt.show()
-
-# converted_timecodes = [(sum(x * int(t) for x, t in zip([3600, 60, 1], start.split(':'))),
-#                          sum(x * int(t) for x, t in zip([3600, 60, 1], end.split(':'))))
-#                         for start, end in timecodes]
-
-# split_video(video_path, timecodes, output_folder)
-
-# 2(1) In the video, a green alien is seen standing on a grassy field and then suddenly appears in a cartoon. The cartoon shows a green alien fighting a character in a red suit. The green alien is seen hitting the red character with a hammer and then picking him up and throwing him.
-# 

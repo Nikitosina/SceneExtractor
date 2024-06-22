@@ -7,5 +7,7 @@ output1/
 output_one_piece/
 output_one_piece1/
 raw/
+csv_no_caption/
+output_csv/
 __pycache__/
 test.py
