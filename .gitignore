@@ -3,11 +3,13 @@
 *.zip
 .DS_store
 output/
+output_bw/
 output1/
 output_one_piece/
 output_one_piece1/
 raw/
 csv_no_caption/
-output_csv/
+csv_no_caption_bw/
+output_csv_bw/
 __pycache__/
 test.py
