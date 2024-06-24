@@ -2,7 +2,7 @@ import scenedetect
 from scenedetect import save_images
 from moviepy.editor import VideoFileClip
 from scenedetect.frame_timecode import FrameTimecode
-import random
+import moviepy
 from random import randint
 import os
 import subprocess
@@ -11,7 +11,7 @@ def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white
     """ Returns array [["videoid", "duration", "page_dir", "name"]] """
     result_data = []
     video = VideoFileClip(video_path)
-    # video = moviepy.video.fx.all.blackwhite(video, RGB=None)#, preserve_luinosity=True)
+    video = moviepy.video.fx.all.blackwhite(video, RGB=None)#, preserve_luinosity=True)
 
     for i, (start_time, end_time) in enumerate(timecodes):
         page_dir, video_id = f"{randint(1, 999999):06}_{randint(1, 999999):06}", randint(1, 2000000000)
