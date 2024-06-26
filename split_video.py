@@ -36,16 +36,18 @@ def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white
         if len(frames_num) == 0:
             try:
                 os.remove(output_filename)
-                print(f"File '{output_filename}' deleted successfully.")
+                os.rmdir(folder_path)
+                print(f"Folder '{folder_path}' deleted successfully.")
 
             except FileNotFoundError:
-                print(f"File '{output_filename}' not found.")
+                print(f"folder_path '{folder_path}' not found.")
 
         # cwd = os.getcwd()
         # os.chdir("../VILA")
         # caption = caption_video_VILA("../SceneExtractor/" + output_filename)
         # os.chdir(cwd)
-        result_data.append([video_id, duration_to_iso(int(video_clip.duration)), page_dir, ""])
+        if len(frames_num) != 0:
+            result_data.append([video_id, duration_to_iso(int(video_clip.duration)), page_dir, ""])
 
         print(f"Segment {i + 1} saved as {output_filename}")
 
