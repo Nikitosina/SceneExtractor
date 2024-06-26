@@ -7,30 +7,47 @@ from random import randint
 import os
 import subprocess
 
+
 def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white: bool = False) -> list:
     """ Returns array [["videoid", "duration", "page_dir", "name"]] """
     result_data = []
     video = VideoFileClip(video_path)
-    video = moviepy.video.fx.all.blackwhite(video, RGB=None)#, preserve_luinosity=True)
+    video = moviepy.video.fx.all.blackwhite(video, RGB=None)  # , preserve_luinosity=True)
 
     for i, (start_time, end_time) in enumerate(timecodes):
         page_dir, video_id = f"{randint(1, 999999):06}_{randint(1, 999999):06}", randint(1, 2000000000)
         video_clip = video.subclip(start_time, end_time)
-        
+
         folder_path = f"{output_folder}/{page_dir}"
         output_filename = f"{folder_path}/{video_id}.mp4"
-        
+
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
         video_clip.write_videofile(output_filename, codec='libx264')
+
+        print("now detect bad files")
+        frames_num = scenedetect.detect(
+            output_filename,
+            scenedetect.ContentDetector(threshold=0.1, min_scene_len=1),
+            start_time="00:00:00"
+        )
+        print("bad files len: ", len(frames_num))
+
+        if len(frames_num) == 0:
+            try:
+                os.remove(output_filename)
+                print(f"File '{output_filename}' deleted successfully.")
+
+            except FileNotFoundError:
+                print(f"File '{output_filename}' not found.")
 
         # cwd = os.getcwd()
         # os.chdir("../VILA")
         # caption = caption_video_VILA("../SceneExtractor/" + output_filename)
         # os.chdir(cwd)
         result_data.append([video_id, duration_to_iso(int(video_clip.duration)), page_dir, ""])
-        
-        print(f"Segment {i+1} saved as {output_filename}")
+
+        print(f"Segment {i + 1} saved as {output_filename}")
 
     video.close()
     return result_data
@@ -39,7 +56,7 @@ def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white
 def extract_timecodes(video_path: str, scene_limit: int = None, skip_intro: bool = True) -> list[tuple[str, str]]:
     scene_list = scenedetect.detect(
         video_path,
-        scenedetect.ContentDetector(threshold=32, min_scene_len=30),
+        scenedetect.ContentDetector(threshold=25, min_scene_len=25),
         start_time="00:01:51" if skip_intro else "00:00:00"
     )
 
