@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        video {
+            width: 80%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            max-width: 600px;
+        }
+        .controls button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <video id="videoPlayer" playsinline autoplay muted loop>
+        <source id="videoSource" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div id="videoName"></div>
+    <div class="controls">
+        <button onclick="prevVideo()">Previous</button>
+        <button id="like" onclick="likeCurrent()">Like</button>
+        <button onclick="downloadCSV()">Download CSV</button>
+        <button id="dislike" onclick="dislikeCurrent()">Dislike</button>
+        <button onclick="nextVideo()">Next</button>
+    </div>
+    <script>
+        const videoData = [];
+        var headers = [];
+
+        fetch('dataset_106.csv')
+            .then(response => response.text())
+            .then(csvText => {
+                const lines = csvText.trim().split('\n');
+                const firstLine = lines[0].replace("\r", "")
+                headers = firstLine.split(',');
+                if (!headers.includes("rate")) {
+                    headers.push("rate")
+                }
+                for (let i = 1; i < lines.length; i++) {
+                    const fields = lines[i].split(',');
+                    let videoObj = {};
+                    headers.forEach((header, index) => {
+                        videoObj[header.trim()] = index > fields.length - 1 ? "" : fields[index].trim();
+                    });
+                    videoData.push(videoObj);
+                }
+                loadVideo(0);
+                console.log(headers)
+            });
+
+        let currentIndex = 0;
+
+        function loadVideo(index) {
+            if (index < 0 || index >= videoData.length) return;
+
+            currentIndex = index;
+
+            const video = videoData[index];
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoSource = document.getElementById('videoSource');
+            const videoName = document.getElementById('videoName');
+
+            const videoPath = "106_s/" + video.page_dir + "/" + video.videoid + ".mp4";
+            console.log(videoPath)
+            videoSource.src = videoPath;
+            videoPlayer.load();
+
+            videoName.innerText = `(${index} / ${videoData.length}): ` + video.name;
+        }
+
+        function downloadCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+
+            videoData.forEach(function(videoObj) {
+                let rowArray = headers.map((header) => videoObj[header])
+                let row = rowArray.join(",");
+                csvContent += row + "\n";
+            });
+            var encodedUri = encodeURI(csvContent);
+            window.open(encodedUri);
+        }
+
+        function prevVideo() {
+            if (currentIndex > 0) {
+                loadVideo(currentIndex - 1);
+            }
+            updateState();
+        }
+
+        function nextVideo() {
+            if (currentIndex < videoData.length - 1) {
+                loadVideo(currentIndex + 1);
+            }
+            updateState();
+        }
+
+        function likeCurrent() {
+            videoData[currentIndex].rate = "like";
+            updateState();
+        }
+
+        function dislikeCurrent() {
+            videoData[currentIndex].rate = "dislike";
+            updateState();
+        }
+
+        function updateState() {
+            document.getElementById('like').style = videoData[currentIndex].rate == "like" ? "background: #56E39F" : null;
+            document.getElementById('dislike').style = videoData[currentIndex].rate == "dislike" ? "background: #F05365" : null;
+        }
+    </script>
+</body>
+</html>

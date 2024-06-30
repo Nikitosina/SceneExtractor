@@ -12,4 +12,5 @@ csv_no_caption/
 csv_no_caption_bw/
 output_csv_bw/
 __pycache__/
+ignored/
 test.py
