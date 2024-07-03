@@ -46,7 +46,7 @@
         const videoData = [];
         var headers = [];
 
-        fetch('dataset_106.csv')
+        fetch('output_csv_bw/dataset_004.csv')
             .then(response => response.text())
             .then(csvText => {
                 const lines = csvText.trim().split('\n');
@@ -79,7 +79,7 @@
             const videoSource = document.getElementById('videoSource');
             const videoName = document.getElementById('videoName');
 
-            const videoPath = "106_s/" + video.page_dir + "/" + video.videoid + ".mp4";
+            const videoPath = "output_bw/" + video.page_dir + "/" + video.videoid + ".mp4";
             console.log(videoPath)
             videoSource.src = videoPath;
             videoPlayer.load();
