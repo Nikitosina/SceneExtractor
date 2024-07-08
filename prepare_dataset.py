@@ -36,7 +36,7 @@ def split_videos(start: int, end: int):
         t0 = time.time()
         timecodes = extract_timecodes(video_path, skip_intro=True) #, scene_limit=5)
         t0 = time.time() - t0
-        print(f"TIME {start * 27 - 585}: {t0}")
+        print(f"TIME {i + 1}: {t0}")
         result_list = caption_and_save_clips(video_path, timecodes=timecodes, output_folder=output_folder, bad_videos_folder=f"bad_videos/{(i + 1):03}")
         result_data.extend(result_list)
 
@@ -44,6 +44,8 @@ def split_videos(start: int, end: int):
         with open(output_csv, "w") as out:
             csvWriter = csv.writer(out, delimiter=',')
             csvWriter.writerows(result_data)
+        
+        result_data = [["videoid", "duration", "page_dir", "name"]]
 
 # cwd = os.getcwd()
 # os.chdir("../VILA")
