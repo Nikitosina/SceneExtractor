@@ -14,13 +14,12 @@ sys.path.append('CRAFT_pytorch')
 from CRAFT_pytorch.test import text_boxes_count
 from CRAFT_pytorch.craft import CRAFT
 
-tmp_png_filename = "temp.png"
-
 
 def caption_and_save_clips(video_path, timecodes, output_folder, bad_videos_folder, black_and_white: bool = False) -> list:
     """ Returns array [["videoid", "duration", "page_dir", "name"]] """
     result_data = []
     video = VideoFileClip(video_path)
+    video = video.resize(width=512, height=320)
     video = moviepy.video.fx.all.blackwhite(video, RGB=None)  # , preserve_luinosity=True)
     net = CRAFT(pretrained=True)
 
@@ -40,9 +39,10 @@ def caption_and_save_clips(video_path, timecodes, output_folder, bad_videos_fold
         if not too_static:
             too_dynamic = detect_too_dynamic(filepath=output_filename)
         if not too_static and not too_dynamic:
-            video_clip.save_frame(tmp_png_filename, video_clip.duration / 2)
-            too_much_text = detect_too_much_text(imagepath=tmp_png_filename, net=net)
-            os.remove(tmp_png_filename)
+            filename = f"temp_{randint(0, 10000)}.png"
+            video_clip.save_frame(filename, video_clip.duration / 2)
+            too_much_text = detect_too_much_text(imagepath=filename, net=net)
+            os.remove(filename)
 
         if too_static or too_dynamic or too_much_text:
             try:
@@ -93,14 +93,17 @@ def extract_timecodes(video_path: str, scene_limit: int = None, skip_intro: bool
     scene_list = scenedetect.detect(
         video_path,
         scenedetect.ContentDetector(threshold=25, min_scene_len=25),
-        start_time="00:01:51" if skip_intro else "00:00:00",
-        end_time="00:22:51"
+        start_time="00:03:14" if skip_intro else "00:00:00", 
+        # end_time="00:22:51"
     )
 
     small_batch = scene_list
     if scene_limit:
         small_batch = small_batch[:scene_limit]
-    small_batch = list(map(lambda x: (FrameTimecode(x[0].frame_num + 1, fps=x[0].framerate), x[1]), small_batch))
+    small_batch = list(map(
+        lambda x: (FrameTimecode(x[0].frame_num + 1, fps=x[0].framerate), FrameTimecode(x[1].frame_num - 1, fps=x[1].framerate)),
+        small_batch
+    ))
     timecodes = map(lambda x: (x[0].get_timecode(), x[1].get_timecode()), small_batch)
     print(f"# of videos: {len(small_batch)}")
     return timecodes

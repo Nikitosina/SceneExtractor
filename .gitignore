@@ -1,7 +1,7 @@
 *.mp4
 *.mkv
 *.zip
-.DS_store
+.DS_Store
 output/
 output_bw/
 output1/
@@ -17,3 +17,4 @@ CRAFT_pytorch/
 csv_no_caption/
 bad_videos/
 test.py
+mkv2mp4.py
