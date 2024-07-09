@@ -32,14 +32,14 @@ def caption_and_save_clips(video_path, timecodes, output_folder, bad_videos_fold
 
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
-        video_clip.write_videofile(output_filename, codec='libx264')
+        video_clip.write_videofile(output_filename, codec='libx264', audio=False)
 
         too_static = detect_too_static(filepath=output_filename)
         too_dynamic, too_much_text = False, False
         if not too_static:
             too_dynamic = detect_too_dynamic(filepath=output_filename)
         if not too_static and not too_dynamic:
-            filename = f"temp_{randint(0, 10000)}.png"
+            filename = f"temp_{os.getpid()}.png"
             video_clip.save_frame(filename, video_clip.duration / 2)
             too_much_text = detect_too_much_text(imagepath=filename, net=net)
             os.remove(filename)
@@ -49,7 +49,7 @@ def caption_and_save_clips(video_path, timecodes, output_folder, bad_videos_fold
                 reason = "static" if too_static else "dynamic" if too_dynamic else "text"
                 if not os.path.exists(bad_videos_folder):
                     os.mkdir(bad_videos_folder)
-                video_clip.write_videofile(f"{bad_videos_folder}/{video_id}_{reason}.mp4", codec='libx264')
+                video_clip.write_videofile(f"{bad_videos_folder}/{video_id}_{reason}.mp4", codec='libx264', audio=False)
                 os.remove(output_filename)
                 os.rmdir(folder_path)
                 print(f"Folder '{folder_path}' deleted successfully.")

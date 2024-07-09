@@ -9,7 +9,7 @@ import time
 import multiprocessing
 
 foldername = "raw"
-format = "mp4"
+format = "mkv"
 
 output_folder = "output_bw"
 output_csv_folder = "csv_no_caption_bw"
@@ -59,15 +59,26 @@ def split_videos(start: int, end: int):
 #     output_csv = f"output_csv_bw/dataset_{(i + 1):03}.csv"
 #     post_process_csv(input_path=output_csv)
 
+def info(title):
+    print(title)
+    print('module name:', __name__)
+    print('parent process:', os.getppid())
+    print('process id:', os.getpid())
+
+def f(start, end):
+    sys.stdout = open(str(os.getpid()) + ".out", "w")
+    info('function f')
+    split_videos(start=start, end=end)
+
 if __name__ == "__main__":
     # Start = real video number - 1, end = real video number
-    start, end = 578, 750
+    start, end = 476, 578
     threads_n = 6
 
     batch = int((end - start) / threads_n)
     for i in range(threads_n):
         from_i = (i * batch) + start
         to_i = ((i + 1) * batch) + start if i != threads_n - 1 else end
-        t1 = multiprocessing.Process(name=f"Hello{i}", target=split_videos, args=[from_i, to_i])
+        t1 = multiprocessing.Process(name=f"Hello{i}", target=f, args=[from_i, to_i])
         t1.start()
         print(f"Started {i}th thread with range: {from_i, to_i}")
