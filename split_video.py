@@ -1,54 +1,111 @@
 import scenedetect
 from scenedetect import save_images
 from moviepy.editor import VideoFileClip
+from moviepy.Clip import Clip
+from moviepy.editor import *
 from scenedetect.frame_timecode import FrameTimecode
-import random
+import moviepy
 from random import randint
 import os
 import subprocess
 
-def caption_and_save_clips(video_path, timecodes, output_folder, black_and_white: bool = False) -> list:
+import sys
+sys.path.append('CRAFT_pytorch')
+from CRAFT_pytorch.test import text_boxes_count
+from CRAFT_pytorch.craft import CRAFT
+
+
+def caption_and_save_clips(video_path, timecodes, output_folder, bad_videos_folder, black_and_white: bool = False) -> list:
     """ Returns array [["videoid", "duration", "page_dir", "name"]] """
     result_data = []
     video = VideoFileClip(video_path)
-    # video = moviepy.video.fx.all.blackwhite(video, RGB=None)#, preserve_luinosity=True)
+    video = video.resize(width=512, height=320)
+    video = moviepy.video.fx.all.blackwhite(video, RGB=None)  # , preserve_luinosity=True)
+    net = CRAFT(pretrained=True)
 
     for i, (start_time, end_time) in enumerate(timecodes):
         page_dir, video_id = f"{randint(1, 999999):06}_{randint(1, 999999):06}", randint(1, 2000000000)
-        video_clip = video.subclip(start_time, end_time)
-        
+        video_clip: Clip = video.subclip(start_time, end_time)
+
         folder_path = f"{output_folder}/{page_dir}"
         output_filename = f"{folder_path}/{video_id}.mp4"
-        
+
         if not os.path.exists(folder_path):
             os.mkdir(folder_path)
-        video_clip.write_videofile(output_filename, codec='libx264')
+        video_clip.write_videofile(output_filename, codec='libx264', audio=False)
 
-        # cwd = os.getcwd()
-        # os.chdir("../VILA")
-        # caption = caption_video_VILA("../SceneExtractor/" + output_filename)
-        # os.chdir(cwd)
-        result_data.append([video_id, duration_to_iso(int(video_clip.duration)), page_dir, ""])
-        
-        print(f"Segment {i+1} saved as {output_filename}")
+        too_static = detect_too_static(filepath=output_filename)
+        too_dynamic, too_much_text = False, False
+        if not too_static:
+            too_dynamic = detect_too_dynamic(filepath=output_filename)
+        if not too_static and not too_dynamic:
+            filename = f"temp_{os.getpid()}.png"
+            video_clip.save_frame(filename, video_clip.duration / 2)
+            too_much_text = detect_too_much_text(imagepath=filename, net=net)
+            os.remove(filename)
+
+        if too_static or too_dynamic or too_much_text:
+            try:
+                reason = "static" if too_static else "dynamic" if too_dynamic else "text"
+                if not os.path.exists(bad_videos_folder):
+                    os.mkdir(bad_videos_folder)
+                video_clip.write_videofile(f"{bad_videos_folder}/{video_id}_{reason}.mp4", codec='libx264', audio=False)
+                os.remove(output_filename)
+                os.rmdir(folder_path)
+                print(f"Folder '{folder_path}' deleted successfully.")
+            except FileNotFoundError:
+                print(f"folder_path '{folder_path}' not found.")
+        else:
+            result_data.append([video_id, duration_to_iso(int(video_clip.duration)), page_dir, ""])
+
+        print(f"Segment {i + 1} saved as {output_filename}")
 
     video.close()
     return result_data
 
 
+def detect_too_static(filepath: str) -> bool:
+    scene_num = scenedetect.detect(
+        filepath,
+        scenedetect.ContentDetector(threshold=0.1, min_scene_len=1)
+    )
+    return len(scene_num) == 0
+
+
+def detect_too_dynamic(filepath: str) -> bool:
+    scene_num = scenedetect.detect(
+        filepath,
+        scenedetect.ContentDetector(threshold=20, min_scene_len=1)
+    )
+    return len(scene_num) > 2
+
+
+def detect_too_much_text(imagepath: str, net: CRAFT) -> bool:
+    res = text_boxes_count(
+        imagepath=imagepath,
+        trained_model="CRAFT_pytorch/weights/craft_mlt_25k.pth",
+        net=net
+    )
+    return res > 1
+
+
 def extract_timecodes(video_path: str, scene_limit: int = None, skip_intro: bool = True) -> list[tuple[str, str]]:
     scene_list = scenedetect.detect(
         video_path,
-        scenedetect.ContentDetector(threshold=32, min_scene_len=30),
-        start_time="00:01:51" if skip_intro else "00:00:00"
+        scenedetect.ContentDetector(threshold=25, min_scene_len=25),
+        start_time="00:03:14" if skip_intro else "00:00:00", 
+        # end_time="00:22:51"
     )
 
     small_batch = scene_list
     if scene_limit:
         small_batch = small_batch[:scene_limit]
-    small_batch = list(map(lambda x: (FrameTimecode(x[0].frame_num + 1, fps=x[0].framerate), x[1]), small_batch))
+    small_batch = list(map(
+        lambda x: (FrameTimecode(x[0].frame_num + 1, fps=x[0].framerate), FrameTimecode(x[1].frame_num - 1, fps=x[1].framerate)),
+        small_batch
+    ))
     timecodes = map(lambda x: (x[0].get_timecode(), x[1].get_timecode()), small_batch)
-    print(small_batch)
+    print(f"# of videos: {len(small_batch)}")
     return timecodes
 
 
